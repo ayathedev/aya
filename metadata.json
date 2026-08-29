@@ -1,0 +1,6 @@
+{
+  "name": "Frame Flow by Aya Kalimah Satya Ruane",
+  "description": "A professional-grade video tool created by Aya Kalimah Satya Ruane to navigate videos frame-by-frame, capture high-quality snapshots, and retouch master stills.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
