@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Trash2, LayoutTemplate, Info, Film, Sparkles, Star } from 'lucide-react';
+import { Download, Trash2, LayoutTemplate, Info, Film, Sparkles, Star, PlayCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CapturedFrame } from '../types';
 
@@ -11,6 +11,7 @@ interface GalleryProps {
   onBatchRename: (ids: string[], prefix: string) => void;
   onExportGif?: () => void;
   onOpenEditor?: (frameId?: string) => void;
+  onSeekTo?: (timestamp: number) => void;
 }
 
 const Gallery: React.FC<GalleryProps> = ({ 
@@ -20,7 +21,8 @@ const Gallery: React.FC<GalleryProps> = ({
   onToggleSelect,
   onBatchRename,
   onExportGif,
-  onOpenEditor
+  onOpenEditor,
+  onSeekTo
 }) => {
   const [showMetadataId, setShowMetadataId] = React.useState<string | null>(null);
   const [hoveredFrameId, setHoveredFrameId] = React.useState<string | null>(null);
@@ -170,9 +172,20 @@ const Gallery: React.FC<GalleryProps> = ({
               />
               
               {/* Timestamp label */}
-              <div className="absolute top-2 left-2 px-2 py-0.5 text-[11px] font-mono font-bold bg-black/70 backdrop-blur-xs rounded text-white">
-                {formatTime(frame.timestamp || 0)}
-              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  if (onSeekTo) {
+                    e.stopPropagation();
+                    onSeekTo(frame.timestamp || 0);
+                  }
+                }}
+                className="absolute top-2 left-2 px-2 py-0.5 text-[11px] font-mono font-bold bg-black/70 hover:bg-black/90 backdrop-blur-xs rounded text-white flex items-center gap-1 transition-colors z-10"
+                title="Click to jump video to this timestamp"
+              >
+                <PlayCircle className="w-3 h-3 text-amber-400" />
+                <span>{formatTime(frame.timestamp || 0)}</span>
+              </button>
 
               {/* Quality score badge */}
               {frame.qualityScore && (

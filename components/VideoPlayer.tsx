@@ -20,6 +20,7 @@ import {
   Crown
 } from 'lucide-react';
 import { CapturedFrame, VideoMetadata, ExportSettings } from '../types';
+import VideoTimeline from './VideoTimeline';
 
 interface VideoPlayerProps {
   src: string;
@@ -28,6 +29,7 @@ interface VideoPlayerProps {
   fileName: string;
   settings: ExportSettings;
   onAnalyze?: () => void;
+  capturedFrames?: CapturedFrame[];
 }
 
 export interface VideoPlayerHandle {
@@ -38,9 +40,18 @@ export interface VideoPlayerHandle {
   step: (dir: 1 | -1, frames?: number) => void;
   setZoom: (level: number) => void;
   bulkExport: (fps: number) => Promise<void>;
+  seekTo: (time: number) => void;
 }
 
-const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, onCapture, onMetadata, fileName, settings, onAnalyze }, ref) => {
+const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ 
+  src, 
+  onCapture, 
+  onMetadata, 
+  fileName, 
+  settings, 
+  onAnalyze,
+  capturedFrames = []
+}, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -316,6 +327,15 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, onCa
     stepFrame(direction as 1 | -1);
   };
 
+  const seekTo = useCallback((time: number) => {
+    if (videoRef.current && !isBulkExporting) {
+      const target = Math.max(0, Math.min(duration, time));
+      videoRef.current.currentTime = target;
+      setCurrentTime(target);
+      lastAutoCaptureMarkFromTime(target);
+    }
+  }, [duration, isBulkExporting]);
+
   useImperativeHandle(ref, () => ({
     capture: captureFrame,
     play: () => { if(!isBulkExporting) { videoRef.current?.play(); setIsPlaying(true); } },
@@ -323,7 +343,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, onCa
     togglePlay: togglePlay,
     step: stepFrame,
     setZoom: (level: number) => setZoomLevel(Math.max(1, Math.min(100, level))),
-    bulkExport: bulkExport
+    bulkExport: bulkExport,
+    seekTo: seekTo
   }));
 
   const handleTimeUpdate = () => {
@@ -474,8 +495,18 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ src, onCa
       </div>
 
       {/* Control Deck */}
-      <div className={`mt-3 space-y-3 p-1 ${isFullScreen ? 'fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-gray-200 z-50' : ''}`}>
+      <div className={`mt-2.5 space-y-2.5 p-1 ${isFullScreen ? 'fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-gray-200 z-50' : ''}`}>
         
+        {/* Scrubbable Frame Marker Timeline */}
+        <VideoTimeline
+          currentTime={currentTime}
+          duration={duration}
+          capturedFrames={capturedFrames}
+          onSeek={seekTo}
+          disabled={isBulkExporting}
+          formatTime={formatTime}
+        />
+
         {/* Progress Slider and Zoom Deck */}
         <div className="flex flex-col sm:flex-row items-center gap-3 bg-white p-1">
           {/* Progress Bar Track */}

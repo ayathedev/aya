@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import { 
-  Video, 
+import {
+  Video,
   Image as ImageIcon,
   Flame,
   Bomb,
@@ -44,7 +44,7 @@ const App: React.FC = () => {
   const [isProModalOpen, setIsProModalOpen] = useState(false);
   const [isGifTeaserOpen, setIsGifTeaserOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
-  
+
   // Standard Community Edition
   const [isPro, setIsPro] = useState<boolean>(false);
 
@@ -54,7 +54,7 @@ const App: React.FC = () => {
 
   const videoPlayerRef = useRef<VideoPlayerHandle>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -131,18 +131,18 @@ const App: React.FC = () => {
       alert("No frames captured in buffer to export.");
       return;
     }
-    
+
     setIsExporting(true);
-    
+
     try {
       const isIframe = window.self !== window.top;
-      
+
       if ('showDirectoryPicker' in window && !isIframe) {
         try {
           const directoryHandle = await (window as any).showDirectoryPicker({
             mode: 'readwrite'
           });
-          
+
           for (let i = 0; i < safeFrames.length; i++) {
             const frame = safeFrames[i];
             const fileName = frame.fileName || `capture_${i}.webp`;
@@ -172,10 +172,10 @@ const App: React.FC = () => {
         const base64Data = frame.dataUrl.split(',')[1];
         zip.file(fileName, base64Data, { base64: true });
       }
-      
+
       const content = await zip.generateAsync({ type: "blob" });
       saveAs(content, `FRAMES_${Date.now()}.zip`);
-      
+
     } catch (err) {
       console.error("Export failed:", err);
       alert("Export failed. Please try again.");
@@ -202,7 +202,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || isExporting) return;
-      
+
       if (e.key === 'Delete') {
         const safeSelected = selectedForComparison || [];
         if (safeSelected.length > 0) {
@@ -213,7 +213,7 @@ const App: React.FC = () => {
         const safeSelected = selectedForComparison || [];
         const safeFrames = frames || [];
         const selectedFrames = safeFrames.filter(f => safeSelected.includes(f.id));
-        
+
         if (selectedFrames.length > 0) {
           handleExportAll(selectedFrames);
         } else if (safeFrames.length > 0) {
@@ -251,7 +251,7 @@ const App: React.FC = () => {
     switch (cmd) {
       case 'help':
         return 'CMDS: SNAP, PRO, GIF, FORMAT [PNG|JPG|WEBP], QUALITY [0-100], SCALE [0.1-4], ZOOM [LVL], CLASH, CLEAR, PLAY, PAUSE';
-      
+
       case 'pro':
         setIsProModalOpen(true);
         return 'OPENING CREATOR PRO LICENSE DECK...';
@@ -349,7 +349,7 @@ const App: React.FC = () => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
       if (file.type.startsWith('video/')) {
@@ -366,24 +366,24 @@ const App: React.FC = () => {
   }
 
   return (
-    <div 
+    <div
       className={`h-screen w-screen relative flex flex-col bg-[#f8fafc] text-slate-900 font-sans overflow-hidden ${isDragging ? 'ring-4 ring-purple-500' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      
+
       {/* Permanent hidden file input for menu bar and desktop actions */}
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        accept="video/*" 
-        className="hidden" 
-        onChange={handleFileChange} 
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="video/*"
+        className="hidden"
+        onChange={handleFileChange}
       />
 
-      <MenuBar 
-        fileName={videoFile?.name} 
+      <MenuBar
+        fileName={videoFile?.name}
         isPro={isPro}
         onPreferences={() => setIsSettingsOpen(true)}
         onAbout={() => setIsAboutOpen(true)}
@@ -418,7 +418,7 @@ const App: React.FC = () => {
       />
 
       <main className="flex-1 flex gap-4 overflow-hidden p-4 pb-14">
-        
+
         {/* Main Player Window */}
         <section className="flex-[2] flex flex-col bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Header Titlebar */}
@@ -430,7 +430,7 @@ const App: React.FC = () => {
               </span>
             </div>
             <div className="flex gap-1.5 items-center">
-              <button 
+              <button
                 onClick={() => { setVideoUrl(null); setVideoFile(null); setFrames([]); setSelectedForComparison([]); }}
                 className="w-5 h-5 rounded-md bg-white/10 hover:bg-white/20 text-white text-xs flex items-center justify-center transition-colors"
                 title="Close Video"
@@ -450,7 +450,7 @@ const App: React.FC = () => {
                 <p className="text-xs text-gray-500 mb-4 max-w-sm">
                   Drag & drop your full recording (.mp4, .webm, .mov) or pick a file to extract high-res creator stills and social teasers.
                 </p>
-                <button 
+                <button
                   onClick={() => fileInputRef.current?.click()}
                   className="px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl shadow-sm active:scale-95 transition-all"
                 >
@@ -458,14 +458,15 @@ const App: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <VideoPlayer 
+              <VideoPlayer
                 ref={videoPlayerRef}
-                src={videoUrl} 
+                src={videoUrl}
                 onCapture={handleCapture}
                 onMetadata={setMetadata}
                 fileName={videoFile?.name || 'capture'}
                 settings={exportSettings}
                 onAnalyze={() => setIsAnalysisOpen(true)}
+                capturedFrames={frames}
               />
             )}
           </div>
@@ -473,7 +474,7 @@ const App: React.FC = () => {
 
         {/* Sidebar Group */}
         <section className="flex-1 flex flex-col gap-4 max-w-[400px]">
-          
+
           {/* Gallery Window */}
           <div className="flex-[3] flex flex-col bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
              {/* Gallery Titlebar */}
@@ -484,7 +485,7 @@ const App: React.FC = () => {
                </div>
                <div className="flex gap-1 items-center">
                  {frameCount > 0 && (
-                   <button 
+                   <button
                      onClick={() => handleExportAll()}
                      className="h-5 bg-white/10 hover:bg-white/20 text-white rounded text-[11px] font-bold px-2 flex items-center justify-center transition-colors"
                    >
@@ -492,7 +493,7 @@ const App: React.FC = () => {
                    </button>
                  )}
                  {(selectedForComparison || []).length === 2 && (
-                   <button 
+                   <button
                      onClick={() => setIsCompareOpen(true)}
                      className="h-5 bg-zinc-800 hover:bg-zinc-700 text-white rounded text-[11px] font-bold px-2 flex items-center justify-center transition-colors border border-zinc-700"
                    >
@@ -501,7 +502,7 @@ const App: React.FC = () => {
                  )}
                </div>
              </div>
-             
+
              <div className="flex-1 overflow-y-auto p-3 bg-slate-50/50">
                {frameCount === 0 ? (
                  <div className="h-full flex flex-col items-center justify-center text-gray-400 p-6 text-center">
@@ -510,12 +511,14 @@ const App: React.FC = () => {
                    <p className="text-[11px] text-gray-400 mt-1">Press [C] or click "Snap Frame" to grab photo stills</p>
                  </div>
                ) : (
-                 <Gallery 
-                   frames={frames || []} 
-                   onRemove={handleRemoveFrame} 
+                 <Gallery
+                   frames={frames || []}
+                   onRemove={handleRemoveFrame}
                    selectedIds={selectedForComparison || []}
                    onToggleSelect={handleToggleSelect}
                    onBatchRename={handleBatchRename}
+                   onSeekTo={(time) => videoPlayerRef.current?.seekTo(time)}
+                   onOpenEditor={(frameId) => setIsEditorOpen(true)}
                    onExportGif={() => {
                      if (frames.length < 2) {
                        alert("Need at least 2 frames to create a GIF teaser.");
@@ -536,8 +539,8 @@ const App: React.FC = () => {
         </section>
       </main>
 
-      <Shelf 
-        onSettings={() => setIsSettingsOpen(true)} 
+      <Shelf
+        onSettings={() => setIsSettingsOpen(true)}
         onHelp={() => setIsHelpOpen(true)}
         onExportAll={() => handleExportAll()}
         onOpenEditor={() => setIsEditorOpen(true)}
@@ -551,8 +554,8 @@ const App: React.FC = () => {
           <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden text-slate-900 font-sans">
             <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between font-bold text-xs">
               <span>Creator Quick Guide & Shortcuts</span>
-              <button 
-                onClick={() => setIsHelpOpen(false)} 
+              <button
+                onClick={() => setIsHelpOpen(false)}
                 className="w-5 h-5 rounded-md bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
               >
                 ✕
@@ -578,7 +581,7 @@ const App: React.FC = () => {
               </div>
             </div>
             <div className="p-3 bg-slate-50 border-t border-gray-100 flex items-center justify-between">
-              <button 
+              <button
                 onClick={() => {
                   setIsHelpOpen(false);
                   setIsAboutOpen(true);
@@ -587,7 +590,7 @@ const App: React.FC = () => {
               >
                 About Frame Flow...
               </button>
-              <button 
+              <button
                 onClick={() => setIsHelpOpen(false)}
                 className="px-5 py-2 font-bold text-xs bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl transition-colors shadow-sm"
               >
@@ -599,8 +602,8 @@ const App: React.FC = () => {
       )}
 
       {/* Settings Modal */}
-      <SettingsModal 
-        isOpen={isSettingsOpen} 
+      <SettingsModal
+        isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         settings={exportSettings}
         onSettingsChange={setExportSettings}
@@ -613,14 +616,14 @@ const App: React.FC = () => {
       />
 
       {/* Comparison Modal */}
-      <ComparisonModal 
+      <ComparisonModal
         isOpen={isCompareOpen}
         onClose={() => setIsCompareOpen(false)}
         frames={framesToCompare}
       />
 
       {/* AI Analysis Modal */}
-      <AnalysisModal 
+      <AnalysisModal
         isOpen={isAnalysisOpen}
         onClose={() => setIsAnalysisOpen(false)}
         videoUrl={videoUrl}
@@ -634,7 +637,7 @@ const App: React.FC = () => {
       />
 
       {/* Glamour LUT Image Editor Modal */}
-      <ImageEditorModal 
+      <ImageEditorModal
         isOpen={isEditorOpen}
         onClose={() => setIsEditorOpen(false)}
         frames={frames || []}
@@ -647,7 +650,7 @@ const App: React.FC = () => {
       />
 
       {/* Animated GIF Teaser Studio Modal */}
-      <GifTeaserModal 
+      <GifTeaserModal
         isOpen={isGifTeaserOpen}
         onClose={() => setIsGifTeaserOpen(false)}
         frames={framesToCompare.length >= 2 ? framesToCompare : frames}
@@ -659,7 +662,7 @@ const App: React.FC = () => {
       />
 
       {/* Pro License & Upgrade Modal */}
-      <ProUpgradeModal 
+      <ProUpgradeModal
         isOpen={isProModalOpen}
         onClose={() => setIsProModalOpen(false)}
         isPro={isPro}
@@ -667,7 +670,7 @@ const App: React.FC = () => {
       />
 
       {/* About Frame Flow Modal */}
-      <AboutModal 
+      <AboutModal
         isOpen={isAboutOpen}
         onClose={() => setIsAboutOpen(false)}
         isPro={isPro}
