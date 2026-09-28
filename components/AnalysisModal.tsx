@@ -61,6 +61,7 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({
   const [allScores, setAllScores] = useState<{ time: number; score: number }[]>([]);
   const [candidates, setCandidates] = useState<SampledCandidate[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   const chartCanvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -175,21 +176,70 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({
     setAllScores([]);
     setCandidates([]);
     setSelectedIds([]);
+    setAnalysisError(null);
     setCurrentStep('INITIALIZING VIDEO SCANNER...');
 
     const video = document.createElement('video');
-    video.src = videoUrl;
     video.muted = true;
     video.playsInline = true;
+    video.preload = 'auto';
+    video.crossOrigin = 'anonymous';
     video.style.display = 'none';
     videoRef.current = video;
 
     document.body.appendChild(video);
 
     try {
-      await new Promise((resolve, reject) => {
-        video.onloadedmetadata = () => resolve(null);
-        video.onerror = () => reject(new Error("Failed to load video metadata"));
+      await new Promise<void>((resolve, reject) => {
+        let isSettled = false;
+
+        const cleanup = () => {
+          video.removeEventListener('loadedmetadata', onLoaded);
+          video.removeEventListener('error', onError);
+          clearTimeout(timeoutId);
+        };
+
+        const onLoaded = () => {
+          if (!isSettled) {
+            isSettled = true;
+            cleanup();
+            resolve();
+          }
+        };
+
+        const onError = () => {
+          if (!isSettled) {
+            isSettled = true;
+            cleanup();
+            const err = video.error;
+            reject(new Error(err?.message || `Failed to load video (Error code ${err?.code || 'unknown'})`));
+          }
+        };
+
+        const timeoutId = setTimeout(() => {
+          if (!isSettled) {
+            if (video.readyState >= 1 && video.duration && !isNaN(video.duration)) {
+              isSettled = true;
+              cleanup();
+              resolve();
+            } else {
+              isSettled = true;
+              cleanup();
+              reject(new Error("Video loading timed out. Please check if the video format is supported."));
+            }
+          }
+        }, 10000);
+
+        video.addEventListener('loadedmetadata', onLoaded);
+        video.addEventListener('error', onError);
+
+        if (video.readyState >= 1 && video.duration && !isNaN(video.duration)) {
+          onLoaded();
+          return;
+        }
+
+        video.src = videoUrl;
+        video.load();
       });
 
       const duration = video.duration;
@@ -223,10 +273,22 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({
         video.currentTime = time;
 
         await new Promise((resolve) => {
+          let isResolved = false;
           const onSeek = () => {
-            video.removeEventListener('seeked', onSeek);
-            resolve(null);
+            if (!isResolved) {
+              isResolved = true;
+              video.removeEventListener('seeked', onSeek);
+              clearTimeout(seekTimeout);
+              resolve(null);
+            }
           };
+          const seekTimeout = setTimeout(() => {
+            if (!isResolved) {
+              isResolved = true;
+              video.removeEventListener('seeked', onSeek);
+              resolve(null);
+            }
+          }, 1000);
           video.addEventListener('seeked', onSeek);
         });
 
@@ -347,15 +409,15 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({
       setSelectedIds(uniqueCandidates.map((_, i) => i));
       setCurrentStep('SCAN COMPLETE!');
 
-    } catch (err) {
-      console.error(err);
-      alert("Analysis failed or interrupted.");
+    } catch (err: any) {
+      console.error("Video analysis error:", err);
+      setAnalysisError(err?.message || "Video analysis encountered an error. Please verify the media file.");
     } finally {
       setIsAnalyzing(false);
-      if (videoRef.current) {
-        document.body.removeChild(videoRef.current);
-        videoRef.current = null;
+      if (videoRef.current && videoRef.current.parentNode) {
+        videoRef.current.parentNode.removeChild(videoRef.current);
       }
+      videoRef.current = null;
     }
   };
 
@@ -536,33 +598,49 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({
 
             {candidates.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-50 rounded-xl border border-gray-200 border-dashed text-center">
-                <Video className="w-12 h-12 text-slate-400 mb-3" />
-                {isAnalyzing ? (
-                  <div className="w-full max-w-xs space-y-3">
-                    <span className="text-xs font-bold text-zinc-900 block animate-pulse">
-                      {currentStep}
-                    </span>
-                    <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-zinc-900 transition-all duration-100" 
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-bold text-gray-600 block">{progress}% Video Analyzed</span>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-xs font-bold text-gray-700 mb-3">
-                      Auto-scan full recording to extract the crispest, best-lit shots.
-                    </p>
-                    <button 
+                {analysisError && !isAnalyzing ? (
+                  <div className="w-full max-w-sm p-4 bg-rose-50 border border-rose-200 rounded-xl text-center mb-3">
+                    <AlertCircle className="w-6 h-6 text-rose-500 mx-auto mb-2" />
+                    <p className="text-xs font-bold text-rose-800 mb-1">Scanning Interrupted</p>
+                    <p className="text-[11px] text-rose-600 mb-3">{analysisError}</p>
+                    <button
                       onClick={startAnalysis}
-                      className="px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl shadow-xs active:scale-95 transition-all flex items-center gap-2 mx-auto"
+                      className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors shadow-xs"
                     >
-                      <Sparkles className="w-4 h-4" />
-                      <span>Scan Video for Best Frames</span>
+                      Retry Analysis
                     </button>
                   </div>
+                ) : (
+                  <>
+                    <Video className="w-12 h-12 text-slate-400 mb-3" />
+                    {isAnalyzing ? (
+                      <div className="w-full max-w-xs space-y-3">
+                        <span className="text-xs font-bold text-zinc-900 block animate-pulse">
+                          {currentStep}
+                        </span>
+                        <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-zinc-900 transition-all duration-100" 
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-bold text-gray-600 block">{progress}% Video Analyzed</span>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-xs font-bold text-gray-700 mb-3">
+                          Auto-scan full recording to extract the crispest, best-lit shots.
+                        </p>
+                        <button 
+                          onClick={startAnalysis}
+                          className="px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl shadow-xs active:scale-95 transition-all flex items-center gap-2 mx-auto"
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          <span>Scan Video for Best Frames</span>
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             ) : (

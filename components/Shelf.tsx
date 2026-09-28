@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { Settings, Monitor, HardDrive, Image as ImageIcon } from 'lucide-react';
+import { Settings, Monitor, HardDrive, Image as ImageIcon, Cloud } from 'lucide-react';
 
 interface ShelfProps {
   onSettings: () => void;
   onHelp: () => void;
+  onImportCloud?: () => void;
   onExportAll?: () => void;
   onOpenEditor?: () => void;
   frameCount: number;
@@ -14,6 +15,7 @@ interface ShelfProps {
 const Shelf: React.FC<ShelfProps> = ({ 
   onSettings, 
   onHelp, 
+  onImportCloud,
   onExportAll, 
   onOpenEditor, 
   frameCount,
@@ -55,12 +57,28 @@ const Shelf: React.FC<ShelfProps> = ({
 
           <button 
             onClick={onSettings}
-            className="h-7 px-2.5 min-w-[120px] bg-white border-gray-200 rounded-md border flex items-center gap-2 active:scale-95 transition-transform text-sm hover:bg-gray-50 shadow-xs"
+            className="h-7 px-2.5 min-w-[100px] bg-white border-gray-200 rounded-md border flex items-center gap-2 active:scale-95 transition-transform text-xs font-semibold hover:bg-gray-50 shadow-xs"
           >
             <Settings className="w-3.5 h-3.5 text-zinc-700" />
             <span>Settings</span>
           </button>
+
+          {onImportCloud && (
+            <button 
+              onClick={onImportCloud}
+              className="h-7 px-2.5 min-w-[110px] bg-white border-gray-200 rounded-md border flex items-center gap-1.5 active:scale-95 transition-transform text-xs font-semibold hover:bg-blue-50/50 hover:border-blue-200 text-gray-800 shadow-xs"
+              title="Import video footage from Google Drive or Google Photos"
+            >
+              <Cloud className="w-3.5 h-3.5 text-blue-600" />
+              <span>Cloud Import</span>
+            </button>
+          )}
         </div>
+      </div>
+
+      {/* Center Area: Copyright Badge */}
+      <div className="hidden lg:flex items-center text-[11px] font-medium text-zinc-500 select-none">
+        <span>Copyright &copy; 2026 Aya Kalimah Satya Ruane</span>
       </div>
 
       {/* Right Area: System Tray */}

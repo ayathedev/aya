@@ -117,7 +117,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({
 
         {/* Footer */}
         <div className="px-6 py-3 bg-slate-50 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
-          <span>&copy; 1995-2026 Aya Kalimah Satya Ruane</span>
+          <span>Copyright &copy; 2026 Aya Kalimah Satya Ruane. All rights reserved.</span>
           <button 
             onClick={onClose}
             className="px-4 py-1.5 font-bold text-xs bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg transition-colors shadow-xs"

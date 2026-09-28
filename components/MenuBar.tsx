@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Monitor, Crown, Sparkles, Sliders, Film } from 'lucide-react';
+import { Monitor, Crown, Sparkles, Sliders, Film, HardDrive, Image as ImageIcon } from 'lucide-react';
 
 interface MenuBarProps {
   fileName?: string;
@@ -7,6 +7,8 @@ interface MenuBarProps {
   onPreferences?: () => void;
   onAbout?: () => void;
   onOpenMedia?: () => void;
+  onImportDrive?: () => void;
+  onImportPhotos?: () => void;
   onClearBuffer?: () => void;
   onToggleFullscreen?: () => void;
   onZoomIn?: () => void;
@@ -24,6 +26,8 @@ const MenuBar: React.FC<MenuBarProps> = ({
   onPreferences,
   onAbout,
   onOpenMedia,
+  onImportDrive,
+  onImportPhotos,
   onClearBuffer,
   onToggleFullscreen,
   onZoomIn,
@@ -38,9 +42,9 @@ const MenuBar: React.FC<MenuBarProps> = ({
 
   const menus = [
     { label: 'Flow', htmlLabel: <><span className="underline">F</span>low</>, items: ['About Frame Flow', 'Preferences'] },
-    { label: 'File', htmlLabel: <><span className="underline">F</span>ile</>, items: ['Open Media...', 'Clear Buffer'] },
+    { label: 'File', htmlLabel: <><span className="underline">F</span>ile</>, items: ['Open Local Media...', 'Import from Google Drive...', 'Import from Google Photos...', 'Clear Buffer'] },
     { label: 'View', htmlLabel: <><span className="underline">V</span>iew</>, items: ['Toggle Fullscreen', 'Zoom In', 'Zoom Out', 'Reset View'] },
-    { label: 'Tools', htmlLabel: <><span className="underline">T</span>ools</>, items: ['Preferences...'] }
+    { label: 'Tools', htmlLabel: <><span className="underline">T</span>ools</>, items: ['Preferences...', 'Import from Google Drive...', 'Import from Google Photos...'] }
   ];
 
   const handleItemClick = (item: string) => {
@@ -56,7 +60,14 @@ const MenuBar: React.FC<MenuBarProps> = ({
         onPreferences?.();
         break;
       case 'Open Media...':
+      case 'Open Local Media...':
         onOpenMedia?.();
+        break;
+      case 'Import from Google Drive...':
+        onImportDrive?.();
+        break;
+      case 'Import from Google Photos...':
+        onImportPhotos?.();
         break;
       case 'Clear Buffer':
         onClearBuffer?.();

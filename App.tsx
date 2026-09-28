@@ -26,6 +26,7 @@ import ImageEditorModal from './components/ImageEditorModal';
 import ProUpgradeModal from './components/ProUpgradeModal';
 import GifTeaserModal from './components/GifTeaserModal';
 import { AboutModal } from './components/AboutModal';
+import GoogleMediaModal from './components/GoogleMediaModal';
 import { CapturedFrame, VideoMetadata, ExportSettings } from './types';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -44,6 +45,8 @@ const App: React.FC = () => {
   const [isProModalOpen, setIsProModalOpen] = useState(false);
   const [isGifTeaserOpen, setIsGifTeaserOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
+  const [googleInitialTab, setGoogleInitialTab] = useState<'drive' | 'photos'>('drive');
 
   // Standard Community Edition
   const [isPro, setIsPro] = useState<boolean>(false);
@@ -92,6 +95,19 @@ const App: React.FC = () => {
       }));
     }
   };
+
+  const handleSelectGoogleVideo = useCallback((file: File, url: string) => {
+    if (videoUrl) URL.revokeObjectURL(videoUrl);
+    setVideoFile(file);
+    setVideoUrl(url);
+    setMetadata(null);
+    setFrames([]);
+    setSelectedForComparison([]);
+    setExportSettings(prev => ({
+      ...prev,
+      prefix: file.name.split('.')[0].toUpperCase()
+    }));
+  }, [videoUrl]);
 
   const handleCapture = useCallback((frame: CapturedFrame) => {
     setFrames(prev => {
@@ -250,7 +266,19 @@ const App: React.FC = () => {
 
     switch (cmd) {
       case 'help':
-        return 'CMDS: SNAP, PRO, GIF, FORMAT [PNG|JPG|WEBP], QUALITY [0-100], SCALE [0.1-4], ZOOM [LVL], CLASH, CLEAR, PLAY, PAUSE';
+        return 'CMDS: SNAP, PRO, GIF, DRIVE, PHOTOS, FORMAT [PNG|JPG|WEBP], QUALITY [0-100], SCALE [0.1-4], ZOOM [LVL], CLASH, CLEAR, PLAY, PAUSE';
+
+      case 'drive':
+      case 'gdrive':
+        setGoogleInitialTab('drive');
+        setIsGoogleModalOpen(true);
+        return 'OPENING GOOGLE DRIVE CLOUD BROWSER...';
+
+      case 'photos':
+      case 'gphotos':
+        setGoogleInitialTab('photos');
+        setIsGoogleModalOpen(true);
+        return 'OPENING GOOGLE PHOTOS LIBRARY...';
 
       case 'pro':
         setIsProModalOpen(true);
@@ -388,6 +416,14 @@ const App: React.FC = () => {
         onPreferences={() => setIsSettingsOpen(true)}
         onAbout={() => setIsAboutOpen(true)}
         onOpenMedia={() => fileInputRef.current?.click()}
+        onImportDrive={() => {
+          setGoogleInitialTab('drive');
+          setIsGoogleModalOpen(true);
+        }}
+        onImportPhotos={() => {
+          setGoogleInitialTab('photos');
+          setIsGoogleModalOpen(true);
+        }}
         onClearBuffer={() => { setFrames([]); setSelectedForComparison([]); }}
         onToggleFullscreen={() => {
           if (document.fullscreenElement) {
@@ -443,19 +479,49 @@ const App: React.FC = () => {
           <div className="flex-1 p-4 overflow-hidden flex flex-col">
             {!videoUrl ? (
               <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/70 rounded-xl border border-gray-200 border-dashed p-8 text-center">
-                <div className="p-4 mb-4 bg-white border border-gray-200 rounded-2xl shadow-sm">
-                  <Video className="w-12 h-12 text-zinc-700" />
+                <div className="p-4 mb-3 bg-white border border-gray-200 rounded-2xl shadow-sm">
+                  <Video className="w-10 h-10 text-zinc-700" />
                 </div>
-                <h3 className="text-base font-bold text-gray-900 mb-1">Drop Your Video Recording Here</h3>
-                <p className="text-xs text-gray-500 mb-4 max-w-sm">
-                  Drag & drop your full recording (.mp4, .webm, .mov) or pick a file to extract high-res creator stills and social teasers.
+                <h3 className="text-base font-bold text-gray-900 mb-1">Load Video Recording</h3>
+                <p className="text-xs text-gray-500 mb-5 max-w-sm">
+                  Drag & drop footage (.mp4, .webm, .mov) or import directly from your local computer or Google Cloud storage.
                 </p>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl shadow-sm active:scale-95 transition-all"
-                >
-                  Select Video File...
-                </button>
+                
+                <div className="flex flex-wrap items-center justify-center gap-2.5">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl shadow-sm active:scale-95 transition-all flex items-center gap-2"
+                  >
+                    <Video className="w-3.5 h-3.5" />
+                    <span>Select Local File...</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setGoogleInitialTab('drive');
+                      setIsGoogleModalOpen(true);
+                    }}
+                    className="px-4 py-2.5 bg-white hover:bg-blue-50/60 text-blue-700 border border-blue-200 font-bold text-xs rounded-xl shadow-xs active:scale-95 transition-all flex items-center gap-2"
+                  >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                      <path d="M4.5 19.5L9 11.5H19.5L15 19.5H4.5Z" fill="#34A853"/>
+                      <path d="M15 19.5L19.5 11.5L15 3.5H10.5L6 11.5L15 19.5Z" fill="#4285F4"/>
+                      <path d="M10.5 3.5L6 11.5L1.5 3.5H10.5Z" fill="#FBBC05"/>
+                    </svg>
+                    <span>Google Drive</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setGoogleInitialTab('photos');
+                      setIsGoogleModalOpen(true);
+                    }}
+                    className="px-4 py-2.5 bg-white hover:bg-amber-50/60 text-amber-800 border border-amber-200 font-bold text-xs rounded-xl shadow-xs active:scale-95 transition-all flex items-center gap-2"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Google Photos</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <VideoPlayer
@@ -542,6 +608,10 @@ const App: React.FC = () => {
       <Shelf
         onSettings={() => setIsSettingsOpen(true)}
         onHelp={() => setIsHelpOpen(true)}
+        onImportCloud={() => {
+          setGoogleInitialTab('drive');
+          setIsGoogleModalOpen(true);
+        }}
         onExportAll={() => handleExportAll()}
         onOpenEditor={() => setIsEditorOpen(true)}
         frameCount={frameCount}
@@ -678,6 +748,14 @@ const App: React.FC = () => {
           setIsAboutOpen(false);
           setIsProModalOpen(true);
         }}
+      />
+
+      {/* Google Drive & Photos Cloud Media Import Modal */}
+      <GoogleMediaModal
+        isOpen={isGoogleModalOpen}
+        onClose={() => setIsGoogleModalOpen(false)}
+        onSelectVideo={handleSelectGoogleVideo}
+        initialTab={googleInitialTab}
       />
 
     </div>

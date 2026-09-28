@@ -90,7 +90,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onEnter }) => {
         <div className="px-4 py-2 border-t border-gray-200 text-gray-700 text-xs flex items-center justify-between font-bold">
           <div className="flex items-center gap-1.5">
             <Monitor className="w-3.5 h-3.5" />
-            <span>&copy; 1995-2026 Aya Kalimah Satya Ruane</span>
+            <span>Copyright &copy; 2026 Aya Kalimah Satya Ruane</span>
           </div>
           <span>Version 1.4.0</span>
         </div>
